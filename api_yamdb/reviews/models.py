@@ -3,12 +3,13 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
-# TODO заменить, после готовности кастомной модели User
-User = get_user_model()
 
+class User(AbstractUser):
+    bio = models.TextField(
+        'Биография',
+        blank=True,
+    )
 
-# class User(AbstractUser):
-#     pass
 
 class Genre(models.Model):
     pass
