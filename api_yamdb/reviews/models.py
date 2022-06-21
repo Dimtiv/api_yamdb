@@ -1,14 +1,15 @@
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
-# TODO заменить, после готовности кастомной модели User
-User = get_user_model()
 
+class User(AbstractUser):
+    bio = models.TextField(
+        'Биография',
+        blank=True,
+    )
+    # TODO role CharField witch choice
 
-# class User(AbstractUser):
-#     pass
 
 class Genre(models.Model):
     pass
@@ -63,6 +64,11 @@ class Review(models.Model):
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        ordering = ['-pub_date']
+        constraints = [
+            models.UniqueConstraint(fields=['title', 'author'],
+                                    name='unique_title_author')
+        ]
 
 
 class Comment(models.Model):
@@ -80,3 +86,4 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+        ordering = ['-pub_date']
