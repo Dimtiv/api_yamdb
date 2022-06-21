@@ -26,7 +26,7 @@ class Category(models.Model):
         verbose_name_plural = 'Категории'
 
 
-class Tile(models.Model):
+class Title(models.Model):
     pass
 
     class Meta:
@@ -43,8 +43,8 @@ class GenreTitle(models.Model):
 
 
 class Review(models.Model):
-    tile = models.ForeignKey(
-        Tile, on_delete=models.CASCADE,
+    title = models.ForeignKey(
+        Title, on_delete=models.CASCADE,
         related_name="reviews"
     )
     text = models.TextField()
