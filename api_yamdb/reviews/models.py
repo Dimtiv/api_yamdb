@@ -6,7 +6,8 @@ from django.db import models
 #     pass
 
 class Review(models.Model):
-    pass
+    text = models.TextField()
+
 
     class Meta:
         verbose_name = 'Отзыв'
@@ -40,3 +41,12 @@ class Tile(models.Model):
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
+
+
+class GenreTitle(models.Model):
+    pass
+
+    class Meta:
+        verbose_name = 'Жанр Произведения'
+        verbose_name_plural = 'Жанры произведений'
+
