@@ -3,12 +3,32 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
+CHOICES = (
+        ('amin', 'Администратор'),
+        ('moderator', 'Модератор'),
+        ('user', 'Пользователь')
+    )
+
+
 class User(AbstractUser):
+    username = models.CharField(
+        'Логин', max_length=150, unique=True)
+    email = models.EmailField(
+        'Почта', max_length=254, unique=True)
+    role = models.CharField(
+        'Роль', choices=CHOICES, default='user', max_length=15)
     bio = models.TextField(
         'Биография',
         blank=True,
     )
-    # TODO role CharField witch choice
+    first_name = models.CharField(
+        'Имя', max_length=150, blank=True)
+    last_name = models.CharField(
+        'Фамилия', max_length=150, blank=True)
+    password = None
+
+    def __str__(self):
+        return self.text
 
 
 class Genre(models.Model):
