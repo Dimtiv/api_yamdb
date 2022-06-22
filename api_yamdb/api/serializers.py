@@ -1,25 +1,15 @@
 from rest_framework import serializers
 
-from reviews.models import Genre, Title, Category
+from reviews.models import Genre, Title, Category, User
 
 
-class GenreSerializer(serializers.ModelSerializer):
+class TokenSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ('name', 'slug')
-        model = Genre
+        fields = 'username', 'confirmation_code'
+        model = User
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class SignUpSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ('name', 'slug')
-        model = Category
-
-
-class TitleSerializer(serializers.ModelSerializer):
-    rating = serializers.SerializerMethodField()
-
-    class Meta:
-        fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category')
-        model = Title
-
-
+        fields = 'username', 'email'
+        model = User
