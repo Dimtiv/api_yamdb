@@ -37,8 +37,6 @@ class Genre(models.Model):
     #
     # def __str__(self):
     #     return self.name
-    def __str__(self):
-        return self.name
 
     class Meta:
         verbose_name = 'Жанр'
@@ -51,8 +49,6 @@ class Category(models.Model):
     #
     # def __str__(self):
     #     return self.name
-    def __str__(self):
-        return self.name
 
     class Meta:
         verbose_name = 'Категория'
@@ -84,6 +80,7 @@ class GenreTitle(models.Model):
     #
     # def __str__(self):
     #     return f'{self.title} {self.genre}'
+
     def __str__(self):
         return f'{self.title} {self.genre}'
 
