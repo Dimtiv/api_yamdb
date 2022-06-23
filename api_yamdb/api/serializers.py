@@ -48,3 +48,15 @@ class ReviewSerializer(serializers.ModelSerializer):
                 message='Вы уже оставляли отзыв для данного произведения!'
             )
         ]
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username',
+        default=serializers.CurrentUserDefault(),
+    )
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'pub_date')
+        model = Comment
+        read_only_fields = ('author', 'pub_date')
