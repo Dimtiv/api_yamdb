@@ -27,8 +27,6 @@ class User(AbstractUser):
         'Имя', max_length=150, blank=True)
     last_name = models.CharField(
         'Фамилия', max_length=150, blank=True)
-    password = None
-
 
 
 class Genre(models.Model):

@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins
+from rest_framework import mixins, viewsets, filters
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import User
 from .emails import Util
-from .serializers import SignUpSerializer, TokenSerializer
+from .serializers import SignUpSerializer, TokenSerializer, UserSerializer
 from .tokens import account_activation_token
 
 
@@ -38,3 +38,19 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
             return Response(data={'token': str(token)})
 
 
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    # filter_backends = (filters.SearchFilter,)
+    # search_fields = ('username',)
+
+    # def get_queryset(self):
+    #     user = get_object_or_404(User, username=self.kwargs.get('username'))
+    #     # print(username)
+    #     return User.objects.all()
+
+    # def perform_create(self, serializer):
+    #     serializer.save(username=self.request.user)
+    # def get_queryset(self):
+    #     user = get_object_or_404(User, self.request.data['username'])
+    #     return user
