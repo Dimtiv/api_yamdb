@@ -1,13 +1,13 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins
-from rest_framework import status
+from rest_framework import status, filters
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import User
+from reviews.models import User, Genre, Category
 from .emails import Util
-from .serializers import SignUpSerializer, TokenSerializer
+from .serializers import SignUpSerializer, TokenSerializer, GenreSerializer, CategorySerializer
 from .tokens import account_activation_token
 
 
@@ -38,3 +38,20 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
             return Response(data={'token': str(token)})
 
 
+
+class CreateListDestroyViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
+                        mixins.DestroyModelMixin, GenericViewSet):
+    pass
+
+class GenreViewSet(CreateListDestroyViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class CategoryViewSet(CreateListDestroyViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
