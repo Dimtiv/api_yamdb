@@ -44,10 +44,10 @@ class UserViewSet(viewsets.ModelViewSet):
     # filter_backends = (filters.SearchFilter,)
     # search_fields = ('username',)
 
-    # def get_queryset(self):
-    #     user = get_object_or_404(User, username=self.kwargs.get('username'))
-    #     # print(username)
-    #     return User.objects.all()
+    def get_queryset(self):
+        user = get_object_or_404(User, username=self.kwargs.get('username'))
+        # print(username)
+        return User.objects.all()
 
     # def perform_create(self, serializer):
     #     serializer.save(username=self.request.user)
