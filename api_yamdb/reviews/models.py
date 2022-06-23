@@ -4,10 +4,13 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
-CHOICES = (
-    ('amin', 'Администратор'),
-    ('moderator', 'Модератор'),
-    ('user', 'Пользователь')
+ROLE_ADMIN = 'amin'
+ROLE_MODERATOR = 'moderator'
+ROLE_USER = 'user'
+ROLES = (
+    (ROLE_ADMIN, 'Администратор'),
+    (ROLE_MODERATOR, 'Модератор'),
+    (ROLE_USER, 'Пользователь')
 )
 
 
@@ -17,7 +20,7 @@ class User(AbstractUser):
     email = models.EmailField(
         'Почта', max_length=254, unique=True)
     role = models.CharField(
-        'Роль', choices=CHOICES, default='user', max_length=15)
+        'Роль', choices=ROLES, default=ROLE_USER, max_length=15)
     bio = models.TextField(
         'Биография',
         blank=True,
@@ -26,10 +29,11 @@ class User(AbstractUser):
         'Имя', max_length=150, blank=True)
     last_name = models.CharField(
         'Фамилия', max_length=150, blank=True)
-    password = None
 
-    def __str__(self):
-        return self.text
+    # password = None
+
+    # def __str__(self):
+    #     return self.text
 
 
 class Genre(models.Model):

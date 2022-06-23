@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import Genre, Title, Category, User
+from api.plug import setFakeUserToRequest
+from reviews.models import Genre, Title, Category, User, Review, Comment
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -13,3 +15,46 @@ class SignUpSerializer(serializers.ModelSerializer):
     class Meta:
         fields = 'username', 'email'
         model = User
+
+
+class CurrentTitleIdDefault:
+    requires_context = True
+
+    def __call__(self, serializer_field):
+        return serializer_field.context['view'].kwargs.get('title_id')
+
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
+
+
+# TODO убрать заглушку
+class CurrentUserDefault(serializers.CurrentUserDefault):
+
+    def __call__(self, serializer_field):
+        # TODO убрать заглушку
+        setFakeUserToRequest(serializer_field.context['request'])
+        return super().__call__(serializer_field)
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username',
+        # TODO убрать заглушку
+        # default=serializers.CurrentUserDefault(),
+        default=CurrentUserDefault(),
+    )
+    title_id = serializers.HiddenField(
+        default=CurrentTitleIdDefault()
+    )
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'score', 'pub_date', 'title_id')
+        model = Review
+        read_only_fields = ('author', 'pub_date')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Review.objects.all(),
+                fields=('author', 'title_id'),
+                message='Вы уже оставляли отзыв для данного произведения!'
+            )
+        ]
