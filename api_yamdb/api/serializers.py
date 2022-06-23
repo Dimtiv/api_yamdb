@@ -1,13 +1,14 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from api.plug import setFakeUserToRequest
 from reviews.models import Genre, Title, Category, User, Review, Comment
 
 
 class TokenSerializer(serializers.ModelSerializer):
+    token = serializers.StringRelatedField(read_only=True)
+
     class Meta:
-        fields = 'username', 'confirmation_code'
+        fields = 'token',
         model = User
 
 
@@ -27,21 +28,10 @@ class CurrentTitleIdDefault:
         return '%s()' % self.__class__.__name__
 
 
-# TODO убрать заглушку
-class CurrentUserDefault(serializers.CurrentUserDefault):
-
-    def __call__(self, serializer_field):
-        # TODO убрать заглушку
-        setFakeUserToRequest(serializer_field.context['request'])
-        return super().__call__(serializer_field)
-
-
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username',
-        # TODO убрать заглушку
-        # default=serializers.CurrentUserDefault(),
-        default=CurrentUserDefault(),
+        default=serializers.CurrentUserDefault(),
     )
     title_id = serializers.HiddenField(
         default=CurrentTitleIdDefault()
