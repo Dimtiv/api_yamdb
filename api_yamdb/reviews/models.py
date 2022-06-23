@@ -81,9 +81,6 @@ class GenreTitle(models.Model):
     # def __str__(self):
     #     return f'{self.title} {self.genre}'
 
-    def __str__(self):
-        return f'{self.title} {self.genre}'
-
     class Meta:
         verbose_name = 'Жанр Произведения'
         verbose_name_plural = 'Жанры произведений'
