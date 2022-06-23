@@ -5,8 +5,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
-CHOICES = (
-        ('amin', 'Администратор'),
+ROLES = (
+        ('admin', 'Администратор'),
         ('moderator', 'Модератор'),
         ('user', 'Пользователь')
     )
@@ -18,7 +18,7 @@ class User(AbstractUser):
     email = models.EmailField(
         'Почта', max_length=254, unique=True)
     role = models.CharField(
-        'Роль', choices=CHOICES, default='user', max_length=15)
+        'Роль', choices=ROLES, default='user', max_length=15)
     bio = models.TextField(
         'Биография',
         blank=True,
