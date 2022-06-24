@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins
 from rest_framework import status, filters
 from rest_framework.response import Response
@@ -7,9 +8,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import User, Review, Title, Comment, Genre, Category
 from .emails import Util
-from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin
+from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, AdminOrReadOnly
 from .serializers import SignUpSerializer, TokenSerializer, ReviewSerializer, \
-    CommentSerializer, GenreSerializer, CategorySerializer
+    CommentSerializer, GenreSerializer, CategorySerializer, TitleSerializer
 from .tokens import account_activation_token
 
 
@@ -69,13 +70,16 @@ class CommentViewSet(ModelViewSet):
         )
         serializer.save(author=self.request.user, review=review)
 
+
 class CreateListDestroyViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
                         mixins.DestroyModelMixin, GenericViewSet):
     pass
 
+
 class GenreViewSet(CreateListDestroyViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = (AdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -83,5 +87,14 @@ class GenreViewSet(CreateListDestroyViewSet):
 class CategoryViewSet(CreateListDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = (AdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+
+
+class TitleViewSet(ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    permission_classes = (AdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('name', 'year', 'genre__name', 'category__name')

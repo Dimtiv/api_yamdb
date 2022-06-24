@@ -36,3 +36,16 @@ class IsAdmin(permissions.BasePermission):
             request.user.is_authenticated
             and request.user.role == ROLE_ADMIN
         )
+
+
+class AdminOrReadOnly(permissions.BasePermission):
+    message = 'Вы не обладаете достаточными правами для данной операции!'
+
+    def has_permission(self, request, view):
+        return request.method in permissions.SAFE_METHODS
+
+    def has_object_permission(self, request, view, obj):
+        return bool(
+            request.user.is_authenticated
+            and request.user.role == ROLE_ADMIN
+        )

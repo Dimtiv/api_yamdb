@@ -61,17 +61,22 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=300)
+    name = models.CharField('Название', max_length=300)
     year = models.PositiveIntegerField(
+        'Год',
         validators=[MaxValueValidator(datetime.now().year)],
         )
-    description = models.TextField(blank=True, null=True)
-    genre = models.ManyToManyField(Genre, through='GenreTitle')
+    description = models.TextField('Описание', blank=True, null=True)
+    genre = models.ManyToManyField(Genre, through='GenreTitle', verbose_name='Жанр')
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
         related_name='titles',
+        verbose_name='Категория',
     )
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = 'Произведение'

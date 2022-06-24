@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -61,12 +62,27 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         read_only_fields = ('author', 'pub_date')
 
+
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('name', 'slug')
         model = Genre
 
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('name', 'slug')
         model = Category
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    rating = serializers.SerializerMethodField(read_only=True)
+    genre = serializers.SlugRelatedField(many=True, read_only=True, slug_field='slug')
+    category = serializers.SlugRelatedField(read_only=True, slug_field='slug')
+
+    class Meta:
+        fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+        model = Title
+
+    def get_rating(self, obj):
+        return Review.objects.aggregate(rating=Avg('score'))
