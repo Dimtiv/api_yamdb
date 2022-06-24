@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import Genre, Title, Category, User, Review, Comment
+from reviews.models import Genre, Title, Category, User, Review, Comment, \
+    ROLE_ADMIN
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -19,11 +20,26 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # username = serializers.SlugRelatedField(slug_field='username',
-    #                                         read_only=True)
     class Meta:
         fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
         model = User
+
+    def update(self, instance, validated_data):
+        validation_fields = [
+            'username',
+            'email'
+        ]
+        for field in validation_fields:
+            if not validated_data.get(field):
+                raise serializers.ValidationError(f'{field} is required')
+        if self.context['request'].user.role != ROLE_ADMIN or self.context['request'].user != validated_data.get('username'):
+            self.read_only = 'role'
+        return super(UserSerializer, self).update(instance, validated_data)
+        # instance.save()
+        # return instance
+
+
+
 
 class CurrentTitleIdDefault:
     requires_context = True
