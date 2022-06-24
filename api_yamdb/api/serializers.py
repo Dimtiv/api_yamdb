@@ -32,8 +32,8 @@ class UserSerializer(serializers.ModelSerializer):
         for field in validation_fields:
             if not validated_data.get(field):
                 raise serializers.ValidationError(f'{field} is required')
-        if self.context['request'].user.role != ROLE_ADMIN or self.context['request'].user != validated_data.get('username'):
-            self.read_only = 'role'
+        if self.context['request'].user.role != ROLE_ADMIN: # and self.context['request'].user != validated_data.get('username')
+            validated_data.pop('role')
         return super(UserSerializer, self).update(instance, validated_data)
         # instance.save()
         # return instance

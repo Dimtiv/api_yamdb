@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, viewsets, filters
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -45,18 +46,20 @@ class UserViewSet(viewsets.ModelViewSet):
     # queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = (OwnerOrReadOnly, )
 
     def get_queryset(self):
-        if 'me' in self.lookup_field:
+        print(self.kwargs.get('username'))
+        if self.kwargs.get('username') == 'me':
+            print(User.objects.filter(username=self.request.user))
             return User.objects.filter(username=self.request.user)
         return User.objects.all()
 
 
-class OwnUserViewSet(viewsets.ModelViewSet):
+class OwnUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):
     serializer_class = UserSerializer
 
     def get_queryset(self):
+        # print(self.kwargs)
         return User.objects.filter(username=self.request.user.username)
 
 
