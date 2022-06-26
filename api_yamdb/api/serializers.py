@@ -21,7 +21,8 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role')
         model = User
 
     def update(self, instance, validated_data):
@@ -32,13 +33,9 @@ class UserSerializer(serializers.ModelSerializer):
         for field in validation_fields:
             if not validated_data.get(field):
                 raise serializers.ValidationError(f'{field} is required')
-        if self.context['request'].user.role != ROLE_ADMIN: # and self.context['request'].user != validated_data.get('username')
+        if self.context['request'].user.role != ROLE_ADMIN:
             validated_data.pop('role')
         return super(UserSerializer, self).update(instance, validated_data)
-        # instance.save()
-        # return instance
-
-
 
 
 class CurrentTitleIdDefault:

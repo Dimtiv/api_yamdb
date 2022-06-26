@@ -5,10 +5,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 
 from reviews.models import User, Review, Title, Comment
 from .emails import Util
-from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin
+from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, IsOwner
 from .serializers import SignUpSerializer, TokenSerializer, ReviewSerializer, \
     CommentSerializer
 from .serializers import SignUpSerializer, TokenSerializer, UserSerializer
@@ -43,24 +44,16 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    # queryset = User.objects.all()
+    queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
+    permission_classes = [IsOwner | IsAdmin]
 
-    def get_queryset(self):
-        print(self.kwargs.get('username'))
-        if self.kwargs.get('username') == 'me':
-            print(User.objects.filter(username=self.request.user))
-            return User.objects.filter(username=self.request.user)
-        return User.objects.all()
-
-
-class OwnUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):
-    serializer_class = UserSerializer
-
-    def get_queryset(self):
-        # print(self.kwargs)
-        return User.objects.filter(username=self.request.user.username)
+    def get_object(self):
+        username = self.kwargs.get('username')
+        if username == 'me':
+            return self.request.user
+        return super().get_object()
 
 
 class ReviewViewSet(ModelViewSet):

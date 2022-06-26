@@ -36,3 +36,13 @@ class IsAdmin(permissions.BasePermission):
             request.user.is_authenticated
             and request.user.role == ROLE_ADMIN
         )
+
+
+class IsOwner(permissions.BasePermission):
+    message = 'Вы не являетесь владельцем для данной операции!'
+
+    def has_object_permission(self, request, view, obj):
+        return bool(
+            request.user.is_authenticated
+            and obj.username == request.user
+        )
