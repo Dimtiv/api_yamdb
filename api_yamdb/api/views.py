@@ -14,10 +14,13 @@ from reviews.models import User, Review, Title, Comment, Genre, Category
 from .emails import Util
 from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, IsOwner
 from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, AdminOrReadOnly
-from .serializers import SignUpSerializer, TokenSerializer, ReviewSerializer, \
-    CommentSerializer
-from .serializers import SignUpSerializer, TokenSerializer, UserSerializer
-    CommentSerializer, GenreSerializer, CategorySerializer, TitleSerializer
+from .serializers import (
+    SignUpSerializer, TokenSerializer, ReviewSerializer, CommentSerializer
+)
+from .serializers import (
+    SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
+    GenreSerializer, CategorySerializer, TitleSerializer
+)
 from .tokens import account_activation_token
 
 
@@ -52,13 +55,22 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = [IsOwner | IsAdmin]
+    permission_classes = (IsAdmin, IsOwner)
 
     def get_object(self):
         username = self.kwargs.get('username')
         if username == 'me':
             return self.request.user
         return super().get_object()
+
+    def check_object_permissions(self, request, obj):
+        for permission in self.get_permissions():
+            if not permission.has_object_permission(request, self, obj):
+                self.permission_denied(
+                    request,
+                    message=getattr(permission, 'message', None),
+                    code=getattr(permission, 'code', None)
+                )
 
 
 class ReviewViewSet(ModelViewSet):

@@ -15,9 +15,13 @@ class TokenSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+    # username = serializers.SlugRelatedField(read_only=True, slug_field='username')
+    # email = serializers.SlugRelatedField(read_only=True, slug_field='email')
+
     class Meta:
         fields = 'username', 'email'
         model = User
+        # read_only_fields = ('username', 'email')
 
 
 class UserSerializer(serializers.ModelSerializer):
