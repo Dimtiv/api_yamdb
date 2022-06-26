@@ -1,16 +1,26 @@
 from django.shortcuts import get_object_or_404
+from rest_framework import mixins, viewsets, filters
+from rest_framework import status
+from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins
 from rest_framework import status, filters
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 
 from reviews.models import User, Review, Title, Comment, Genre, Category
 from .emails import Util
+from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, IsOwner
 from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, AdminOrReadOnly
-from .serializers import SignUpSerializer, TokenSerializer, ReviewSerializer, \
-    CommentSerializer, GenreSerializer, CategorySerializer, TitleSerializer
+from .serializers import (
+    SignUpSerializer, TokenSerializer, ReviewSerializer, CommentSerializer
+)
+from .serializers import (
+    SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
+    GenreSerializer, CategorySerializer, TitleSerializer
+)
 from .tokens import account_activation_token
 
 
@@ -39,6 +49,28 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
                 user, confirmation_code):
             token = RefreshToken.for_user(user).access_token
             return Response(data={'token': str(token)})
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'username'
+    permission_classes = (IsAdmin, IsOwner)
+
+    def get_object(self):
+        username = self.kwargs.get('username')
+        if username == 'me':
+            return self.request.user
+        return super().get_object()
+
+    def check_object_permissions(self, request, obj):
+        for permission in self.get_permissions():
+            if not permission.has_object_permission(request, self, obj):
+                self.permission_denied(
+                    request,
+                    message=getattr(permission, 'message', None),
+                    code=getattr(permission, 'code', None)
+                )
 
 
 class ReviewViewSet(ModelViewSet):

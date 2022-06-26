@@ -30,11 +30,6 @@ class User(AbstractUser):
     last_name = models.CharField(
         'Фамилия', max_length=150, blank=True)
 
-    # password = None
-
-    # def __str__(self):
-    #     return self.text
-
 
 class Genre(models.Model):
     name = models.CharField(max_length=256)
