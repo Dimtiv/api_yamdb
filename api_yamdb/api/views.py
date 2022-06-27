@@ -1,25 +1,16 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, viewsets, filters
-from rest_framework import status
-from rest_framework.decorators import action
+from rest_framework import mixins, viewsets, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins
-from rest_framework import status, filters
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
-
 from reviews.models import User, Review, Title, Comment, Genre, Category
 from .emails import Util
-from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, IsOwner
-from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, AdminOrReadOnly
-from .serializers import (
-    SignUpSerializer, TokenSerializer, ReviewSerializer, CommentSerializer
-)
+from .permissions import (OwnerOrReadOnly, IsModerator, IsAdmin,
+                          AdminOrReadOnly, IsOwner)
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
-    GenreSerializer, CategorySerializer, TitleSerializer
+    GenreSerializer, CategorySerializer, TitleSerializer, ReviewSerializer
 )
 from .tokens import account_activation_token
 
@@ -104,7 +95,7 @@ class CommentViewSet(ModelViewSet):
 
 
 class CreateListDestroyViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
-                        mixins.DestroyModelMixin, GenericViewSet):
+                               mixins.DestroyModelMixin, GenericViewSet):
     pass
 
 
