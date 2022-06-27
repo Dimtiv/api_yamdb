@@ -1,21 +1,18 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, viewsets, filters
-from rest_framework import status
-from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins
 from rest_framework import status, filters
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
 
 from reviews.models import User, Review, Title, Comment, Genre, Category
 from .emails import Util
-from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, IsOwner
+from .permissions import IsOwner, OwnerOrAdmin, IsAdminOnly
 from .permissions import OwnerOrReadOnly, IsModerator, IsAdmin, AdminOrReadOnly
 from .serializers import (
-    SignUpSerializer, TokenSerializer, ReviewSerializer, CommentSerializer
+    ReviewSerializer
 )
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
@@ -55,22 +52,65 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = (IsAdmin, IsOwner)
+    permission_classes = [IsAdminOnly]
+    permission_classes_per_method = {
+        'list': [IsAdminOnly],
+        'post': [IsAdminOnly],
+        'delete': [IsAdminOnly],
+        'patch': [OwnerOrAdmin],
+        'get': [IsAdminOnly]
+    }
 
-    def get_object(self):
-        username = self.kwargs.get('username')
-        if username == 'me':
-            return self.request.user
-        return super().get_object()
+    # def get_object(self):
+    #     print(self.request.user)
+    #     username = self.kwargs.get('username')
+    #     if username == 'me':
+    #         return self.request.user
+    #     return super().get_object()
 
-    def check_object_permissions(self, request, obj):
-        for permission in self.get_permissions():
-            if not permission.has_object_permission(request, self, obj):
-                self.permission_denied(
-                    request,
-                    message=getattr(permission, 'message', None),
-                    code=getattr(permission, 'code', None)
-                )
+
+    # @action(methods='patch', detail=False, permission_classes=[IsOwner, IsAdmin])
+    # def update(self, request, *args, **kwargs):
+    #     super(UserViewSet, self).update(self.request.data)
+
+    # def get_permissions(self):
+    #     username = self.kwargs.get('username')
+    #     if username == 'me':
+    #         self.check_object_permissions(self.request.user, self.get_object().user)
+
+    # def list(self, request, *args, **kwargs):
+    #     self.permission_classes = IsAdminOnly
+    #     queryset = self.filter_queryset(self.get_queryset())
+    #
+    #     page = self.paginate_queryset(queryset)
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         return self.get_paginated_response(serializer.data)
+    #
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
+
+    # @action(detail=False, permission_classes=IsAdmin)
+    # def get_queryset(self):
+    #     # serializer = UserSerializer(self.request.user)
+    #     if self.request.user.is_authenticated and self.request.user.role == ROLE_ADMIN:
+    #         # return Response(serializer.data, status=status.HTTP_403_FORBIDDEN)
+    #         return User.objects.all()
+        # queryset = self.filter_queryset(self.get_queryset())
+        # serializer = self.get_serializer(queryset, many=True)
+        # raise HttpResponseForbidden
+        # return Response(serializer.data, status=status.HTTP_403_FORBIDDEN)
+        # raise HttpResponseForbidden
+        # raise status.HTTP_403_FORBIDDEN("You're don't have permissions for this!")
+
+
+class MeUserViewSet(viewsets.ModelViewSet):
+    permission_classes = OwnerOrAdmin
+    serializer_class = [IsOwner | IsAdminOnly]
+
+    def get_queryset(self):
+        return User.objects.filter(username=self.request.user)
+
 
 
 class ReviewViewSet(ModelViewSet):
