@@ -2,8 +2,8 @@ from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import Genre, Title, Category, User, Review, Comment, \
-    ROLE_ADMIN
+from reviews.models import (Genre, Title, Category, User, Review, Comment,
+                            ROLE_ADMIN)
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -101,11 +101,13 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField(read_only=True)
-    genre = serializers.SlugRelatedField(many=True, read_only=True, slug_field='slug')
+    genre = serializers.SlugRelatedField(many=True, read_only=True,
+                                         slug_field='slug')
     category = serializers.SlugRelatedField(read_only=True, slug_field='slug')
 
     class Meta:
-        fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+        fields = (
+        'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
         model = Title
 
     def get_rating(self, obj):
