@@ -11,7 +11,6 @@ class IsReadOnly(MyBasePermission):
     def has_permission(self, request, view):
         return bool(
             request.method in permissions.SAFE_METHODS
-            or request.user.is_authenticated
         )
 
 
