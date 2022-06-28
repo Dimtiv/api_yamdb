@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, filters, status
+from rest_framework import mixins, filters, status, permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -9,7 +9,7 @@ from .emails import Util
 from .permissions import (IsModerator, IsAdmin, IsOwner, IsReadOnly)
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
-    GenreSerializer, CategorySerializer, TitleSerializer, ReviewSerializer
+    GenreSerializer, CategorySerializer, TitleGetSerializer, ReviewSerializer, TitlePostSerializer
 )
 from .tokens import account_activation_token
 
@@ -109,7 +109,12 @@ class CategoryViewSet(CreateListDestroyViewSet):
 
 class TitleViewSet(ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
+    serializer_class = TitleGetSerializer
     permission_classes = [IsReadOnly | IsAdmin]
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('name', 'year', 'genre__name', 'category__name')
+
+    def get_serializer_class(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return TitleGetSerializer
+        return TitlePostSerializer
