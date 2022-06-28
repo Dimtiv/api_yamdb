@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -60,9 +59,10 @@ class Title(models.Model):
     year = models.PositiveIntegerField(
         'Год',
         validators=[MaxValueValidator(datetime.now().year)],
-        )
+    )
     description = models.TextField('Описание', blank=True, null=True)
-    genre = models.ManyToManyField(Genre, through='GenreTitle', verbose_name='Жанр')
+    genre = models.ManyToManyField(Genre, through='GenreTitle',
+                                   verbose_name='Жанр')
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
