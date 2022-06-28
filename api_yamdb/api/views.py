@@ -61,7 +61,6 @@ class UserViewSet(ModelViewSet):
         return super().get_object()
 
     def get_permissions(self):
-        print(f'The action is: {self.action}')
         if self.action == ['retrieve']:
             permission_classes = [IsAuthenticated]
         elif self.action == ['partial_update']:
