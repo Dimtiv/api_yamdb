@@ -1,6 +1,5 @@
 from rest_framework import permissions
 from reviews.models import ROLE_MODERATOR, ROLE_ADMIN
-from rest_framework.permissions import IsAdminUser
 
 
 class MyBasePermission(permissions.BasePermission):
@@ -35,17 +34,14 @@ class IsAdmin(MyBasePermission):
 
 
 class ForUserViewSetIsAdmin(MyBasePermission):
+
     def has_permission(self, request, view):
         return (request.user.is_authenticated
                 and (request.user.role == ROLE_ADMIN or request.user.is_staff))
-        # if request.user.is_authenticated:
-        #     return bool(
-        #         request.user.role == ROLE_ADMIN or request.user.is_staff
-        #     )
-        # return False
 
 
 class ForUserViewSetIsOwner(MyBasePermission):
+
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated
 
@@ -53,10 +49,13 @@ class ForUserViewSetIsOwner(MyBasePermission):
         return obj == request.user
 
 
-class IsAdminOrSelf(IsAdminUser):
+class IsAdminOrSelf(MyBasePermission):
     """
     Allow access to admin users or the user himself.
     """
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_staff or ROLE_ADMIN)
+
     def has_object_permission(self, request, view, obj):
         if request.user and (request.user.is_staff or request.user.role == ROLE_ADMIN):
             return True
