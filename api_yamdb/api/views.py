@@ -1,12 +1,17 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import User, Review, Title, Comment, Genre, Category
+from reviews.models import User, Review, Title, Comment, Genre, Category, \
+    ROLE_ADMIN
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .emails import Util
-from .permissions import (IsModerator, IsAdmin, IsOwner, IsReadOnly)
+from .permissions import (
+    IsModerator, IsAdmin, IsOwner, IsReadOnly, ForUserViewSetIsAdmin, ForUserViewSetIsOwner, IsAdminOrSelf
+)
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
     GenreSerializer, CategorySerializer, TitleSerializer, ReviewSerializer
@@ -45,22 +50,42 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = [IsAdminOnly]
-    permission_classes_per_method = {
-        'list': [IsAdminOnly],
-        'post': [IsAdminOnly],
-        'delete': [IsAdminOnly],
-        'patch': [OwnerOrAdmin],
-        'get': [IsAdminOnly]
-    }
+    # permission_classes = [IsAdminOrSelf]
 
-    # def get_object(self):
-    #     print(self.request.user)
-    #     username = self.kwargs.get('username')
-    #     if username == 'me':
-    #         return self.request.user
-    #     return super().get_object()
+    def get_object(self):
+        username = self.kwargs.get('username')
+        if username == 'me':
+            # self.permission_classes = [IsAuthenticated]
+            print('set permission')
+            return self.request.user
+        # print(self.action)
+        # self.permission_classes = [ForUserViewSetIsAdmin]
+        return super().get_object()
 
+    @action(detail=True, methods='patch')
+    def me(self, request):
+        print('ME function')
+        self.permission_classes = [IsAdminOrSelf]
+        user = self.get_object()
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            user.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=status.HTTP_403_FORBIDDEN)
+
+    def get_permissions(self):
+        print(f'The action is: {self.action.upper()}')
+        # methods = ['list', 'create', 'destroy']
+        if self.action == ['partial_update', 'retrieve']:
+            permission_classes = [IsAdminOrSelf]
+        else:
+            permission_classes = [ForUserViewSetIsAdmin]
+        return [permission() for permission in permission_classes]
+
+    # def perform_update(self, serializer):
+    #     # self.permission_classes = [ForUserViewSetIsAdmin]
+    #     serializer.save()
 
     # @action(methods='patch', detail=False, permission_classes=[IsOwner, IsAdmin])
     # def update(self, request, *args, **kwargs):
@@ -97,29 +122,38 @@ class UserViewSet(ModelViewSet):
         # raise status.HTTP_403_FORBIDDEN("You're don't have permissions for this!")
 
 
-    def get_object(self):
-        username = self.kwargs.get('username')
-        if username == 'me':
-            return self.request.user
-        return super().get_object()
+    # def get_object(self):
+    #     username = self.kwargs.get('username')
+    #     if username == 'me':
+    #         return self.request.user
+    #     return super().get_object()
 
-    def check_object_permissions(self, request, obj):
-        for permission in self.get_permissions():
-            if not permission.has_object_permission(request, self, obj):
-                self.permission_denied(
-                    request,
-                    message=getattr(permission, 'message', None),
-                    code=getattr(permission, 'code', None)
-                )
+    # def check_object_permissions(self, request, obj):
+    #     for permission in self.get_permissions():
+    #         if not permission.has_object_permission(request, self, obj):
+    #             self.permission_denied(
+    #                 request,
+    #                 message=getattr(permission, 'message', None),
+    #                 code=getattr(permission, 'code', None)
+    #             )
 
-class MeUserViewSet(viewsets.ModelViewSet):
-    permission_classes = OwnerOrAdmin
-    serializer_class = [IsOwner | IsAdminOnly]
+
+class MeUserViewSet(ModelViewSet):
+    serializer_class = UserSerializer
+    # permission_classes = (IsAuthenticated)
+    http_method_names = ['get', 'patch']
+
+    def list(self, request, *args, **kwargs):
+        queryset = User.objects.filter(username=self.request.user)
+        serializer = UserSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        pass
 
     def get_queryset(self):
+        print(__name__)
         return User.objects.filter(username=self.request.user)
-
-
 
 
 class ReviewViewSet(ModelViewSet):

@@ -1,5 +1,6 @@
 from rest_framework import permissions
 from reviews.models import ROLE_MODERATOR, ROLE_ADMIN
+from rest_framework.permissions import IsAdminUser
 
 
 class MyBasePermission(permissions.BasePermission):
@@ -33,6 +34,38 @@ class IsAdmin(MyBasePermission):
         )
 
 
+class ForUserViewSetIsAdmin(MyBasePermission):
+    def has_permission(self, request, view):
+        return (request.user.is_authenticated
+                and (request.user.role == ROLE_ADMIN or request.user.is_staff))
+        # if request.user.is_authenticated:
+        #     return bool(
+        #         request.user.role == ROLE_ADMIN or request.user.is_staff
+        #     )
+        # return False
+
+
+class ForUserViewSetIsOwner(MyBasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        return obj == request.user
+
+
+class IsAdminOrSelf(IsAdminUser):
+    """
+    Allow access to admin users or the user himself.
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.user and (request.user.is_staff or request.user.role == ROLE_ADMIN):
+            return True
+        elif (request.user and type(obj) == type(request.user) and
+              obj == request.user):
+            return True
+        return False
+
+
 class IsOwner(MyBasePermission):
 
     def has_object_permission(self, request, view, obj):
@@ -40,14 +73,4 @@ class IsOwner(MyBasePermission):
             request.user.is_authenticated
             and (obj == request.user
                  or 'author' in obj and obj.author == request.user)
-        )
-
-
-class IsOwner(permissions.BasePermission):
-    message = 'Вы не являетесь владельцем для данной операции!'
-
-    def has_object_permission(self, request, view, obj):
-        return bool(
-            request.user.is_authenticated
-            and obj.username == request.user
         )
