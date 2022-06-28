@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, filters, status, permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, filters, status
+from rest_framework import permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -10,12 +10,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import User, Review, Title, Comment, Genre, Category
 from .emails import Util
 from .permissions import (
-    IsModerator, IsAdmin, IsOwner, IsReadOnly, ForUserViewSetIsAdmin,
+    IsModerator, IsAdmin, IsOwner, IsReadOnly, IsAdminForUserVievSet,
     IsAdminOrSelf
 )
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
-    GenreSerializer, CategorySerializer, TitleGetSerializer, ReviewSerializer, TitlePostSerializer
+    GenreSerializer, CategorySerializer, TitleGetSerializer, ReviewSerializer,
+    TitlePostSerializer
 )
 from .tokens import account_activation_token
 
@@ -51,7 +52,6 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = [ForUserViewSetIsAdmin]
 
     def get_object(self):
         username = self.kwargs.get('username')
@@ -67,13 +67,13 @@ class UserViewSet(ModelViewSet):
         elif self.action == ['partial_update']:
             permission_classes = [IsAdminOrSelf]
         else:
-            permission_classes = [ForUserViewSetIsAdmin]
+            permission_classes = [IsAdminForUserVievSet]
         return [permission() for permission in permission_classes]
 
 
 class MeUserViewSet(ModelViewSet):
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated, )
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return User.objects.filter(username=self.request.user)

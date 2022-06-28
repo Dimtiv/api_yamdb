@@ -32,20 +32,11 @@ class IsAdmin(MyBasePermission):
         )
 
 
-class ForUserViewSetIsAdmin(MyBasePermission):
+class IsAdminForUserVievSet(MyBasePermission):
 
     def has_permission(self, request, view):
         return (request.user.is_authenticated
                 and (request.user.role == ROLE_ADMIN or request.user.is_staff))
-
-
-class ForUserViewSetIsOwner(MyBasePermission):
-
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
-
-    def has_object_permission(self, request, view, obj):
-        return obj == request.user
 
 
 class IsAdminOrSelf(MyBasePermission):

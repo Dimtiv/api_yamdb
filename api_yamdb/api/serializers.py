@@ -2,8 +2,9 @@ from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import (Genre, Title, Category, User, Review, Comment,
-                            ROLE_ADMIN)
+from reviews.models import (
+    Genre, Title, Category, User, Review, Comment, ROLE_ADMIN
+)
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -15,13 +16,10 @@ class TokenSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    # username = serializers.SlugRelatedField(read_only=True, slug_field='username')
-    # email = serializers.SlugRelatedField(read_only=True, slug_field='email')
 
     class Meta:
         fields = 'username', 'email'
         model = User
-        # read_only_fields = ('username', 'email')
 
 
 class UserSerializer(serializers.ModelSerializer):
