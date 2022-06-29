@@ -1,4 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework import mixins, filters, status
 from rest_framework import permissions
@@ -30,25 +31,13 @@ class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        key2obj = {
-            'email': User.objects.filter(
-                email=request.data.get('email')),
-            'username': User.objects.filter(
-                username=request.data.get('username'))
-        }
-        for key, user in key2obj.items():
-            if user.exists():
-                user = user.get()
-                confirmation_code = account_activation_token.make_token(user)
-                Util.send_email(key2obj['email'], confirmation_code)
-                return Response(
-                    {'message': f'Данный {key} занят, письмо отправлено'
-                                f' повторно, пользователь не создан'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
         serializer.is_valid(raise_exception=True)
         email = serializer.data['email']
         username = serializer.data['username']
+        if User.objects.filter(email=email).first() != User.objects.filter(
+                username=username).first():
+            raise ValidationError(
+                {'detail': 'Данный email или username уже используются!'})
         user, created = User.objects.get_or_create(
             username=username,
             email=email
@@ -102,7 +91,7 @@ class MeUserViewSet(ModelViewSet):
     def get_queryset(self):
         return User.objects.filter(username=self.request.user)
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         # возвращаем 'retrieve' вместо 'list' для прохождения теста.
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -151,12 +140,8 @@ class CommentViewSet(ModelViewSet):
         serializer.save(author=self.request.user, review=review)
 
 
-class CreateListDestroyViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
-                               mixins.DestroyModelMixin, GenericViewSet):
-    pass
-
-
-class GenreViewSet(CreateListDestroyViewSet):
+class GenreViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
+                   mixins.DestroyModelMixin, GenericViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [IsReadOnly | IsAdmin]
@@ -165,7 +150,8 @@ class GenreViewSet(CreateListDestroyViewSet):
     search_fields = ('name',)
 
 
-class CategoryViewSet(CreateListDestroyViewSet):
+class CategoryViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
+                      mixins.DestroyModelMixin, GenericViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     lookup_field = 'slug'

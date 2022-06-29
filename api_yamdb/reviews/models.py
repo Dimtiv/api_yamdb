@@ -30,6 +30,9 @@ class User(AbstractUser):
     last_name = models.CharField(
         'Фамилия', max_length=150, blank=True)
 
+    class Meta:
+        ordering = ['username']
+
 
 class Genre(models.Model):
     name = models.CharField(max_length=256)
@@ -41,6 +44,7 @@ class Genre(models.Model):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
+        ordering = ['name']
 
 
 class Category(models.Model):
@@ -53,6 +57,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
+        ordering = ['name']
 
 
 class Title(models.Model):
@@ -77,6 +82,7 @@ class Title(models.Model):
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
+        ordering = ['id']
 
 
 class GenreTitle(models.Model):
