@@ -1,4 +1,5 @@
 from django.db.models import Avg
+from django.db.models.functions import Round
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -111,8 +112,7 @@ class TitleGetSerializer(serializers.ModelSerializer):
         model = Title
 
     def get_rating(self, obj):
-        return round(Review.objects.filter(title_id=obj.id)
-                     .aggregate(rating=Avg('score'))['rating'])
+        return Title.objects.filter(id=obj.id).aggregate(rating=Round(Avg('reviews__score'))).get('rating')
 
 
 class TitlePostSerializer(serializers.ModelSerializer):
