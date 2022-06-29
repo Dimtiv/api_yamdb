@@ -3,25 +3,32 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import (Genre, Title, Category, User, Review, Comment,
-                            ROLE_ADMIN)
+                            ROLE_ADMIN, USERNAME_ME)
 
 
 class TokenSerializer(serializers.ModelSerializer):
-    token = serializers.StringRelatedField(read_only=True)
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
     class Meta:
-        fields = 'token',
+        fields = ('username', 'confirmation_code')
         model = User
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    # username = serializers.SlugRelatedField(read_only=True, slug_field='username')
-    # email = serializers.SlugRelatedField(read_only=True, slug_field='email')
+    username = serializers.CharField()
+    email = serializers.EmailField()
 
     class Meta:
-        fields = 'username', 'email'
+        fields = ('username', 'email')
         model = User
-        # read_only_fields = ('username', 'email')
+
+    def validate_username(self, value):
+        if value == USERNAME_ME:
+            raise serializers.ValidationError(
+                f"Username не может принимать значение '{USERNAME_ME}'."
+                f" Данное значение зарезервировано!")
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -107,7 +114,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = (
-        'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
         model = Title
 
     def get_rating(self, obj):
