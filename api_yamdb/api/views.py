@@ -1,6 +1,7 @@
-from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, filters, status, permissions
+from rest_framework.generics import get_object_or_404
+from rest_framework import mixins, filters, status
+from rest_framework import permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -25,13 +26,16 @@ class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=False)
-        headers = self.get_success_headers(serializer.data)
-        user = get_object_or_404(User, username=self.request.data['username'])
+        serializer.is_valid(raise_exception=True)
+        print(serializer.data)
+        user, created = User.objects.get_or_create(
+            username=serializer.data['username'],
+            email=serializer.data['email']
+        )
         confirmation_code = account_activation_token.make_token(user)
         Util.send_email(self.request.data['email'], confirmation_code)
-        return Response(serializer.data,
-                        status=status.HTTP_200_OK,
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK,
                         headers=headers)
 
 
@@ -39,12 +43,14 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
     serializer_class = TokenSerializer
 
     def create(self, request, *args, **kwargs):
-        confirmation_code = self.request.data['confirmation_code']
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        confirmation_code = serializer.data['confirmation_code']
         user = get_object_or_404(User, username=self.request.data['username'])
-        if user is not None and account_activation_token.check_token(
-                user, confirmation_code):
-            token = RefreshToken.for_user(user).access_token
-            return Response(data={'token': str(token)})
+        if not account_activation_token.check_token(user, confirmation_code):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        token = RefreshToken.for_user(user).access_token
+        return Response(data={'token': str(token)})
 
 
 class UserViewSet(ModelViewSet):

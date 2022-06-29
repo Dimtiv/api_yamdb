@@ -11,7 +11,7 @@ ROLES = (
     (ROLE_MODERATOR, 'Модератор'),
     (ROLE_USER, 'Пользователь')
 )
-
+USERNAME_ME = 'me'
 
 class User(AbstractUser):
     username = models.CharField(
