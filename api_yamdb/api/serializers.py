@@ -27,18 +27,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'first_name', 'last_name', 'bio', 'role']
         model = User
 
-    # def update(self, instance, validated_data):
-    #     validation_fields = [
-    #         'username',
-    #         'email'
-    #     ]
-    #     for field in validation_fields:
-    #         if not validated_data.get(field):
-    #             raise serializers.ValidationError(f'{field} is required')
-    #     # if self.context['request'].user.role != ROLE_ADMIN:
-    #     #     validated_data.pop('role')
-    #     return super(UserSerializer, self).update(instance, validated_data)
-
 
 class MeUserSerializer(UserSerializer):
     role = serializers.CharField(read_only=True)
