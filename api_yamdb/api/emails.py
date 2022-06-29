@@ -6,7 +6,7 @@ class Util:
     def send_email(reciever, token):
         email = EmailMessage(
             subject='Yamdb',
-            body=f'Your confirmation code: {token}',
+            body=f'Ваш код подтверждения: {token}',
             to=[reciever]
         )
         email.send()
