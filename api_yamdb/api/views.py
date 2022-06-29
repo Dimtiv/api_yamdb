@@ -6,6 +6,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import User, Review, Title, Comment, Genre, Category
 from .emails import Util
+from .filters import TitleFilter
 from .permissions import (IsModerator, IsAdmin, IsOwner, IsReadOnly)
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
@@ -112,7 +113,7 @@ class TitleViewSet(ModelViewSet):
     serializer_class = TitleGetSerializer
     permission_classes = [IsReadOnly | IsAdmin]
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('name', 'year', 'genre__name', 'category__name')
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
