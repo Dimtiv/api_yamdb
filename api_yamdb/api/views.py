@@ -1,7 +1,9 @@
+from django.contrib.admin.templatetags.admin_list import pagination
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, filters, status
 from rest_framework import permissions
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -16,7 +18,7 @@ from .permissions import (
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
     GenreSerializer, CategorySerializer, TitleGetSerializer, ReviewSerializer,
-    TitlePostSerializer
+    TitlePostSerializer, MeUserSerializer
 )
 from .tokens import account_activation_token
 
@@ -52,31 +54,63 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
+    permission_classes = [IsAdminForUserVievSet]
 
-    def get_object(self):
-        username = self.kwargs.get('username')
-        if username == 'me':
-            self.permission_classes = [IsAuthenticated]
-            print('set permission in func(get_object)')
-            return self.request.user
-        return super().get_object()
+    # def get_object(self):
+    #     username = self.kwargs.get('username')
+    #     if username == 'me':
+    #         self.permission_classes = [IsAuthenticated]
+    #         print('set permission in func(get_object)')
+    #         return self.request.user
+    #     return super().get_object()
 
-    def get_permissions(self):
-        if self.action == ['retrieve']:
-            permission_classes = [IsAuthenticated]
-        elif self.action == ['partial_update']:
-            permission_classes = [IsAdminOrSelf]
-        else:
-            permission_classes = [IsAdminForUserVievSet]
-        return [permission() for permission in permission_classes]
+    # def get_permissions(self):
+    #     if self.action == ['retrieve']:
+    #         permission_classes = [IsAuthenticated]
+    #     elif self.action == ['partial_update']:
+    #         permission_classes = [IsAdminOrSelf]
+    #     else:
+    #         permission_classes = [IsAdminForUserVievSet]
+    #     return [permission() for permission in permission_classes]
 
 
 class MeUserViewSet(ModelViewSet):
+    # queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
-    def get_queryset(self):
+    # def get(self, request, format=None):
+    #     user = User.objects.get(username=self.request.user)
+    #     serializer = UserSerializer(user)
+    #     return Response(serializer.data)
+
+    def get_object(self):
+        user = User.objects.get(username=self.request.user.username)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+    def get_queryset(self, format=None):
         return User.objects.filter(username=self.request.user)
+
+    # @action(detail=False, methods='retrieve')
+    # def me(self):
+    #     user = User.objects.filter(username=self.request.user)
+    #     return Response(user)
+
+    @action(detail=True, methods='partial_update')
+    def patch(self, request):
+        user = get_object_or_404(User, username=self.request.user.username)
+        serializer = MeUserSerializer(
+            user,
+            data=self.request.data,
+            partial=True,
+            context={'role': self.request.user.role}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ReviewViewSet(ModelViewSet):
