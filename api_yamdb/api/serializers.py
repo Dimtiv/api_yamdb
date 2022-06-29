@@ -3,8 +3,9 @@ from django.db.models.functions import Round
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import (Genre, Title, Category, User, Review, Comment,
-                            ROLE_ADMIN)
+from reviews.models import (
+    Genre, Title, Category, User, Review, Comment, ROLE_ADMIN
+)
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -16,32 +17,20 @@ class TokenSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    # username = serializers.SlugRelatedField(read_only=True, slug_field='username')
-    # email = serializers.SlugRelatedField(read_only=True, slug_field='email')
 
     class Meta:
         fields = 'username', 'email'
         model = User
-        # read_only_fields = ('username', 'email')
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = ['username', 'email', 'first_name', 'last_name', 'bio', 'role']
         model = User
 
-    def update(self, instance, validated_data):
-        validation_fields = [
-            'username',
-            'email'
-        ]
-        for field in validation_fields:
-            if not validated_data.get(field):
-                raise serializers.ValidationError(f'{field} is required')
-        if self.context['request'].user.role != ROLE_ADMIN:
-            validated_data.pop('role')
-        return super(UserSerializer, self).update(instance, validated_data)
+
+class MeUserSerializer(UserSerializer):
+    role = serializers.CharField(read_only=True)
 
 
 class CurrentTitleIdDefault:
