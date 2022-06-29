@@ -24,21 +24,12 @@ class IsModerator(MyBasePermission):
 
 
 class IsAdmin(MyBasePermission):
-    # TODO: добавить 'has_permission': request.user.is_authenticated ?
-    # Тогда можно будет избавиться от класса IsAdminForUserViewSet
 
-    def has_object_permission(self, request, view, obj):
+    def has_permission(self, request, view):
         return bool(
             request.user.is_authenticated
             and (request.user.role == ROLE_ADMIN or request.user.is_staff)
         )
-
-
-class IsAdminForUserViewSet(MyBasePermission):
-
-    def has_permission(self, request, view):
-        return (request.user.is_authenticated
-                and (request.user.role == ROLE_ADMIN or request.user.is_staff))
 
 
 class IsOwner(MyBasePermission):

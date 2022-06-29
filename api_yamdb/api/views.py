@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import User, Review, Title, Comment, Genre, Category
 from .emails import Util
 from .permissions import (
-    IsModerator, IsAdmin, IsOwner, IsReadOnly, IsAdminForUserViewSet
+    IsModerator, IsAdmin, IsOwner, IsReadOnly
 )
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
@@ -54,7 +54,7 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = [IsAdminForUserViewSet]
+    permission_classes = [IsAdmin]
 
 
 class MeUserViewSet(ModelViewSet):
@@ -74,7 +74,6 @@ class MeUserViewSet(ModelViewSet):
 
     def list(self, request):
         # возвращаем 'retrieve' вместо 'list' для прохождения теста.
-
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
