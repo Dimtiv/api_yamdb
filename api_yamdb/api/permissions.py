@@ -9,9 +9,10 @@ class MyBasePermission(permissions.BasePermission):
 class IsReadOnly(MyBasePermission):
 
     def has_permission(self, request, view):
-        return bool(
-            request.method in permissions.SAFE_METHODS
-        )
+        return request.method in permissions.SAFE_METHODS
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
 
 
 class IsModerator(MyBasePermission):
@@ -22,6 +23,9 @@ class IsModerator(MyBasePermission):
             and request.user.role == ROLE_MODERATOR
         )
 
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
 
 class IsAdmin(MyBasePermission):
 
@@ -31,12 +35,18 @@ class IsAdmin(MyBasePermission):
             and (request.user.role == ROLE_ADMIN or request.user.is_staff)
         )
 
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
 
 class IsOwner(MyBasePermission):
+
+    def has_permission(self, request, view):
+        return bool(request.user.is_authenticated)
 
     def has_object_permission(self, request, view, obj):
         return bool(
             request.user.is_authenticated
             and (obj == request.user
-                 or 'author' in obj and obj.author == request.user)
+                 or hasattr(obj, 'author') and obj.author == request.user)
         )
