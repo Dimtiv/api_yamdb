@@ -22,24 +22,48 @@ from .tokens import account_activation_token
 
 
 class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
+    """
+    Viewset для создания/авторизации пользователя
+    и получения кода подтверждения.
+    """
     serializer_class = SignUpSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
+        key2obj = {
+            'email': User.objects.filter(
+                email=request.data.get('email')),
+            'username': User.objects.filter(
+                username=request.data.get('username'))
+        }
+        for key, user in key2obj.items():
+            if user.exists():
+                user = user.get()
+                confirmation_code = account_activation_token.make_token(user)
+                Util.send_email(key2obj['email'], confirmation_code)
+                return Response(
+                    {'message': f'Данный {key} занят, письмо отправлено'
+                                f' повторно, пользователь не создан'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         serializer.is_valid(raise_exception=True)
-        print(serializer.data)
+        email = serializer.data['email']
+        username = serializer.data['username']
         user, created = User.objects.get_or_create(
-            username=serializer.data['username'],
-            email=serializer.data['email']
+            username=username,
+            email=email
         )
         confirmation_code = account_activation_token.make_token(user)
-        Util.send_email(self.request.data['email'], confirmation_code)
+        Util.send_email(email, confirmation_code)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK,
                         headers=headers)
 
 
 class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
+    """
+    Viewset для получения токена авторизации через код подтверждения.
+    """
     serializer_class = TokenSerializer
 
     def create(self, request, *args, **kwargs):

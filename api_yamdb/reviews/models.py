@@ -13,6 +13,7 @@ ROLES = (
 )
 USERNAME_ME = 'me'
 
+
 class User(AbstractUser):
     username = models.CharField(
         'Логин', max_length=150, unique=True)
