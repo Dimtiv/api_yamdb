@@ -1,8 +1,8 @@
 from django.db.models import Avg
 from django.db.models.functions import Round
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
-
 from reviews.models import (
     Genre, Title, Category, User, Review, Comment, USERNAME_ME
 )
@@ -18,25 +18,34 @@ class TokenSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    username = serializers.CharField()
-    email = serializers.EmailField()
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField(max_length=254)
 
     class Meta:
         fields = ('username', 'email')
         model = User
 
-    def validate_username(self, value):
+    @staticmethod
+    def validate_username(value):
         if value == USERNAME_ME:
             raise serializers.ValidationError(
                 f"Username не может принимать значение '{USERNAME_ME}'. "
                 f"Данное значение зарезервировано!")
         return value
 
+    def validate(self, attrs):
+        if User.objects.filter(
+                email=attrs['email']).first() != User.objects.filter(
+                username=attrs['username']).first():
+            raise ValidationError(
+                {'detail': 'Данный email или username уже используются!'})
+        return attrs
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ['username', 'email', 'first_name', 'last_name', 'bio',
-                  'role']
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio',
+                  'role')
         model = User
 
 
@@ -114,7 +123,8 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
 
     def get_rating(self, obj):
-        return Title.objects.filter(id=obj.id).aggregate(rating=Round(Avg('reviews__score'))).get('rating')
+        return Title.objects.filter(id=obj.id).aggregate(
+            rating=Round(Avg('reviews__score'))).get('rating')
 
 
 class TitlePostSerializer(TitleSerializer):
