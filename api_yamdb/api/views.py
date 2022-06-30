@@ -1,19 +1,17 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404
 from rest_framework import mixins, filters, status
 from rest_framework import permissions
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import User, Review, Title, Comment, Genre, Category
-from .emails import Util
+from .utils import Email
 from .filters import TitleFilter
-from .permissions import (
-    IsModerator, IsAdmin, IsOwner, IsReadOnly
-)
+from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
     GenreSerializer, CategorySerializer, TitleGetSerializer, ReviewSerializer,
@@ -23,13 +21,9 @@ from .tokens import account_activation_token
 
 
 class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
-    """
-    Viewset для создания/авторизации пользователя
-    и получения кода подтверждения.
-    """
     serializer_class = SignUpSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.data['email']
@@ -43,19 +37,14 @@ class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
             email=email
         )
         confirmation_code = account_activation_token.make_token(user)
-        Util.send_email(email, confirmation_code)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK,
-                        headers=headers)
+        Email.send_email(email, confirmation_code)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
-    """
-    Viewset для получения токена авторизации через код подтверждения.
-    """
     serializer_class = TokenSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         confirmation_code = serializer.data['confirmation_code']
@@ -67,9 +56,6 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
 
 
 class UserViewSet(ModelViewSet):
-    """
-    Viewset для получения, создания, редактирования и удаления пользователей.
-    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
@@ -77,9 +63,6 @@ class UserViewSet(ModelViewSet):
 
 
 class MeUserViewSet(ModelViewSet):
-    """
-    Viewset для получения и редактирования своего профиля.
-    """
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None
@@ -91,7 +74,7 @@ class MeUserViewSet(ModelViewSet):
     def get_queryset(self):
         return User.objects.filter(username=self.request.user)
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request):
         # возвращаем 'retrieve' вместо 'list' для прохождения теста.
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -104,10 +87,13 @@ class MeUserViewSet(ModelViewSet):
             data=self.request.data,
             partial=True,
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        # if serializer.is_valid():
+        #     serializer.save()
+        #     return Response(serializer.data, status=status.HTTP_200_OK)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ReviewViewSet(ModelViewSet):

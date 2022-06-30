@@ -3,8 +3,9 @@ from django.db.models.functions import Round
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import (Genre, Title, Category, User, Review, Comment,
-                            USERNAME_ME)
+from reviews.models import (
+    Genre, Title, Category, User, Review, Comment, USERNAME_ME
+)
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -27,8 +28,8 @@ class SignUpSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         if value == USERNAME_ME:
             raise serializers.ValidationError(
-                f"Username не может принимать значение '{USERNAME_ME}'."
-                f" Данное значение зарезервировано!")
+                f"Username не может принимать значение '{USERNAME_ME}'. "
+                f"Данное значение зарезервировано!")
         return value
 
 
