@@ -3,7 +3,6 @@ from django.db.models.functions import Round
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
-
 from reviews.models import (
     Genre, Title, Category, User, Review, Comment, USERNAME_ME
 )
@@ -34,7 +33,9 @@ class SignUpSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        if User.objects.filter(email=attrs['email']).first() != User.objects.filter(username=attrs['username']).first():
+        if User.objects.filter(
+                email=attrs['email']).first() != User.objects.filter(
+                username=attrs['username']).first():
             raise ValidationError(
                 {'detail': 'Данный email или username уже используются!'})
         return attrs
@@ -120,7 +121,8 @@ class TitleGetSerializer(serializers.ModelSerializer):
         model = Title
 
     def get_rating(self, obj):
-        return Title.objects.filter(id=obj.id).aggregate(rating=Round(Avg('reviews__score'))).get('rating')
+        return Title.objects.filter(id=obj.id).aggregate(
+            rating=Round(Avg('reviews__score'))).get('rating')
 
 
 class TitlePostSerializer(serializers.ModelSerializer):

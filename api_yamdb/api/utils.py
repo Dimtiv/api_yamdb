@@ -5,10 +5,10 @@ class Email:
     DEFAULT_SUBJECT = 'Yamdb'
 
     @staticmethod
-    def send_email(reciever, body, subject=DEFAULT_SUBJECT):
+    def send_email(receiver, body, subject=DEFAULT_SUBJECT):
         email = EmailMessage(
             subject=subject,
             body=body,
-            to=[reciever]
+            to=[receiver]
         )
         email.send()

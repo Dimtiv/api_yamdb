@@ -57,8 +57,7 @@ class MeUserViewSet(ModelViewSet):
     pagination_class = None
 
     def get_object(self):
-        user = User.objects.get(username=self.request.user)
-        return user
+        return User.objects.get(username=self.request.user)
 
     def get_queryset(self):
         return User.objects.filter(username=self.request.user)
