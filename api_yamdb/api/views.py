@@ -11,7 +11,7 @@ from .filters import TitleFilter
 from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly, IsMe
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
-    GenreSerializer, CategorySerializer, TitleGetSerializer, ReviewSerializer,
+    GenreSerializer, CategorySerializer, TitleSerializer, ReviewSerializer,
     TitlePostSerializer, MeUserSerializer
 )
 from .tokens import account_activation_token
@@ -117,12 +117,12 @@ class CategoryViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
 
 class TitleViewSet(ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleGetSerializer
+    serializer_class = TitleSerializer
     permission_classes = [IsReadOnly | IsAdmin]
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
-            return TitleGetSerializer
+            return TitleSerializer
         return TitlePostSerializer
