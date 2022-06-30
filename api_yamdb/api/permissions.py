@@ -62,5 +62,4 @@ class IsMe(MyBasePermission):
         return bool(
             request.user.is_authenticated
             and request.parser_context['kwargs'].get('username') == USERNAME_ME
-            and request.method in ('GET', 'PATCH', 'DELETE')
         )
