@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from reviews.models import ROLE_MODERATOR, ROLE_ADMIN
+from reviews.models import ROLE_MODERATOR, ROLE_ADMIN, USERNAME_ME
 
 
 class MyBasePermission(permissions.BasePermission):
@@ -31,6 +31,10 @@ class IsModerator(MyBasePermission):
 class IsAdmin(MyBasePermission):
 
     def has_permission(self, request, view):
+        print(bool(
+            request.user.is_authenticated
+            and (request.user.role == ROLE_ADMIN or request.user.is_staff)
+        ))
         return bool(
             request.user.is_authenticated
             and (request.user.role == ROLE_ADMIN or request.user.is_staff)
@@ -50,4 +54,13 @@ class IsOwner(MyBasePermission):
             request.user.is_authenticated
             and (obj == request.user
                  or hasattr(obj, 'author') and obj.author == request.user)
+        )
+
+
+class IsMe(MyBasePermission):
+    def has_permission(self, request, view):
+        return bool(
+            request.user.is_authenticated
+            and request.parser_context['kwargs'].get('username') == USERNAME_ME
+            and request.method in ('GET', 'PATCH', 'DELETE')
         )

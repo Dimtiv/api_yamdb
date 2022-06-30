@@ -1,8 +1,8 @@
 from django.db.models import Avg
 from django.db.models.functions import Round
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
-
 from reviews.models import (
     Genre, Title, Category, User, Review, Comment, USERNAME_ME
 )
@@ -18,19 +18,28 @@ class TokenSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    username = serializers.CharField()
-    email = serializers.EmailField()
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField(max_length=254)
 
     class Meta:
         fields = ('username', 'email')
         model = User
 
-    def validate_username(self, value):
+    @staticmethod
+    def validate_username(value):
         if value == USERNAME_ME:
             raise serializers.ValidationError(
                 f"Username не может принимать значение '{USERNAME_ME}'. "
                 f"Данное значение зарезервировано!")
         return value
+
+    def validate(self, attrs):
+        if User.objects.filter(
+                email=attrs['email']).first() != User.objects.filter(
+                username=attrs['username']).first():
+            raise ValidationError(
+                {'detail': 'Данный email или username уже используются!'})
+        return attrs
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -102,21 +111,23 @@ class CategorySerializer(serializers.ModelSerializer):
         lookup_field = 'slug'
 
 
-class TitleGetSerializer(serializers.ModelSerializer):
-    rating = serializers.SerializerMethodField(read_only=True)
-    genre = GenreSerializer(many=True, read_only=True)
-    category = CategorySerializer(read_only=True)
+class TitleSerializer(serializers.ModelSerializer):
+    rating = serializers.SerializerMethodField()
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
 
     class Meta:
         fields = (
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+        read_only_fields = ('rating', 'genre', 'category')
         model = Title
 
     def get_rating(self, obj):
-        return Title.objects.filter(id=obj.id).aggregate(rating=Round(Avg('reviews__score'))).get('rating')
+        return Title.objects.filter(id=obj.id).aggregate(
+            rating=Round(Avg('reviews__score'))).get('rating')
 
 
-class TitlePostSerializer(serializers.ModelSerializer):
+class TitlePostSerializer(TitleSerializer):
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
@@ -126,7 +137,3 @@ class TitlePostSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Category.objects.all(),
     )
-
-    class Meta:
-        fields = '__all__'
-        model = Title

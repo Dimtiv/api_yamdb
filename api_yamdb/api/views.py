@@ -1,20 +1,17 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, filters, status
-from rest_framework import permissions
-from rest_framework.exceptions import ValidationError
+from rest_framework import mixins, filters, status, permissions
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from reviews.models import User, Review, Title, Comment, Genre, Category
+from reviews.models import (User, Review, Title, Comment, Genre, Category,
+                            USERNAME_ME)
 from .utils import Email
 from .filters import TitleFilter
-from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly
+from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly, IsMe
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
-    GenreSerializer, CategorySerializer, TitleGetSerializer, ReviewSerializer,
+    GenreSerializer, CategorySerializer, TitleSerializer, ReviewSerializer,
     TitlePostSerializer, MeUserSerializer
 )
 from .tokens import account_activation_token
@@ -23,31 +20,23 @@ from .tokens import account_activation_token
 class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
     serializer_class = SignUpSerializer
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.data['email']
-        username = serializer.data['username']
-        if User.objects.filter(email=email).first() != User.objects.filter(
-                username=username).first():
-            raise ValidationError(
-                {'detail': 'Данный email или username уже используются!'})
-        user, created = User.objects.get_or_create(
-            username=username,
-            email=email
-        )
+        user, created = User.objects.get_or_create(**serializer.validated_data)
         confirmation_code = account_activation_token.make_token(user)
-        Email.send_email(email, confirmation_code)
+        Email.send_email(user.email,
+                         f'Ваш код подтверждения: {confirmation_code}')
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
     serializer_class = TokenSerializer
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        confirmation_code = serializer.data['confirmation_code']
+        confirmation_code = serializer.validated_data['confirmation_code']
         user = get_object_or_404(User, username=self.request.data['username'])
         if not account_activation_token.check_token(user, confirmation_code):
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -57,39 +46,23 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = [IsAdmin]
-
-
-class MeUserViewSet(ModelViewSet):
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = None
+    permission_classes = [IsAdmin | IsMe]
 
     def get_object(self):
-        user = User.objects.get(username=self.request.user)
-        return user
+        if self.kwargs.get('username') == USERNAME_ME:
+            return self.request.user
+        return super().get_object()
 
-    def get_queryset(self):
-        return User.objects.filter(username=self.request.user)
+    def get_serializer_class(self):
+        if self.kwargs.get('username') == USERNAME_ME:
+            return MeUserSerializer
+        return UserSerializer
 
-    def list(self, request):
-        # возвращаем 'retrieve' вместо 'list' для прохождения теста.
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
-    def patch(self, request):
-        user = get_object_or_404(User, username=self.request.user.username)
-        serializer = MeUserSerializer(
-            user,
-            data=self.request.data,
-            partial=True,
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def destroy(self, request, *args, **kwargs):
+        if self.kwargs.get('username') == USERNAME_ME:
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return super().destroy(request, args, kwargs)
 
 
 class ReviewViewSet(ModelViewSet):
@@ -144,12 +117,12 @@ class CategoryViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
 
 class TitleViewSet(ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleGetSerializer
+    serializer_class = TitleSerializer
     permission_classes = [IsReadOnly | IsAdmin]
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
-            return TitleGetSerializer
+            return TitleSerializer
         return TitlePostSerializer
