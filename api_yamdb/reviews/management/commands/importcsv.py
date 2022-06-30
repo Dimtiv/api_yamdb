@@ -3,7 +3,7 @@ import csv
 import os
 from os.path import exists
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from api_yamdb.settings import BASE_DIR
 from reviews.models import (User, Category, Title, Genre, Review, Comment,
