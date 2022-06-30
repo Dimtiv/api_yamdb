@@ -2,12 +2,13 @@ from django.core.mail import EmailMessage
 
 
 class Email:
+    DEFAULT_SUBJECT = 'Yamdb'
+
     @staticmethod
-    def send_email(reciever, confirmation_code):
+    def send_email(reciever, body, subject=DEFAULT_SUBJECT):
         email = EmailMessage(
-            subject='Yamdb',
-            body=f'Ваш код подтверждения: {confirmation_code}',
+            subject=subject,
+            body=body,
             to=[reciever]
         )
         email.send()
-

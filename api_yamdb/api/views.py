@@ -1,13 +1,10 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, filters, status
-from rest_framework import permissions
-from rest_framework.exceptions import ValidationError
+from rest_framework import mixins, filters, status, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from reviews.models import User, Review, Title, Comment, Genre, Category
 from .utils import Email
 from .filters import TitleFilter
@@ -23,36 +20,28 @@ from .tokens import account_activation_token
 class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
     serializer_class = SignUpSerializer
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.data['email']
-        username = serializer.data['username']
-        if User.objects.filter(email=email).first() != User.objects.filter(
-                username=username).first():
-            raise ValidationError(
-                {'detail': 'Данный email или username уже используются!'})
-        user, created = User.objects.get_or_create(
-            username=username,
-            email=email
-        )
+        user, created = User.objects.get_or_create(**serializer.validated_data)
         confirmation_code = account_activation_token.make_token(user)
-        Email.send_email(email, confirmation_code)
+        Email.send_email(user.email,
+                         f'Ваш код подтверждения: {confirmation_code}')
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
     serializer_class = TokenSerializer
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        confirmation_code = serializer.data['confirmation_code']
+        confirmation_code = serializer.validated_data['confirmation_code']
         user = get_object_or_404(User, username=self.request.data['username'])
         if not account_activation_token.check_token(user, confirmation_code):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         token = RefreshToken.for_user(user).access_token
-        return Response(data={'token': str(token)})
+        return Response(data={'token': token})
 
 
 class UserViewSet(ModelViewSet):
@@ -74,7 +63,7 @@ class MeUserViewSet(ModelViewSet):
     def get_queryset(self):
         return User.objects.filter(username=self.request.user)
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         # возвращаем 'retrieve' вместо 'list' для прохождения теста.
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -90,10 +79,6 @@ class MeUserViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     return Response(serializer.data, status=status.HTTP_200_OK)
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ReviewViewSet(ModelViewSet):
