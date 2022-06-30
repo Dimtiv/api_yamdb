@@ -41,7 +41,7 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
         if not account_activation_token.check_token(user, confirmation_code):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         token = RefreshToken.for_user(user).access_token
-        return Response(data={'token': token})
+        return Response(data={'token': str(token)})
 
 
 class UserViewSet(ModelViewSet):

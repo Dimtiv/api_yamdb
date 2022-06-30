@@ -25,7 +25,8 @@ class SignUpSerializer(serializers.ModelSerializer):
         fields = ('username', 'email')
         model = User
 
-    def validate_username(self, value):
+    @staticmethod
+    def validate_username(value):
         if value == USERNAME_ME:
             raise serializers.ValidationError(
                 f"Username не может принимать значение '{USERNAME_ME}'. "
