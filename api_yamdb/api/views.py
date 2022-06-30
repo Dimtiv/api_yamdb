@@ -5,10 +5,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import User, Review, Title, Comment, Genre, Category
+from reviews.models import User, Review, Title, Comment, Genre, Category, \
+    USERNAME_ME
 from .utils import Email
 from .filters import TitleFilter
-from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly
+from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly, IsMe
 from .serializers import (
     SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
     GenreSerializer, CategorySerializer, TitleGetSerializer, ReviewSerializer,
@@ -46,38 +47,23 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = [IsAdmin]
-
-
-class MeUserViewSet(ModelViewSet):
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = None
+    permission_classes = [IsAdmin | IsMe]
 
     def get_object(self):
-        return User.objects.get(username=self.request.user)
+        if self.kwargs.get('username') == USERNAME_ME:
+            return self.request.user
+        return super().get_object()
 
-    def get_queryset(self):
-        return User.objects.filter(username=self.request.user)
+    def get_serializer_class(self):
+        if self.kwargs.get('username') == USERNAME_ME:
+            return MeUserSerializer
+        return UserSerializer
 
-    def list(self, request, *args, **kwargs):
-        # возвращаем 'retrieve' вместо 'list' для прохождения теста.
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
-    def patch(self, request):
-        user = get_object_or_404(User, username=self.request.user.username)
-        serializer = MeUserSerializer(
-            user,
-            data=self.request.data,
-            partial=True,
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def destroy(self, request, *args, **kwargs):
+        if self.kwargs.get('username') == USERNAME_ME:
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return super().destroy(request, args, kwargs)
 
 
 class ReviewViewSet(ModelViewSet):
