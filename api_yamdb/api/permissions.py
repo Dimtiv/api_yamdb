@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from reviews.models import USERNAME_ME
+from users.models import USERNAME_ME
 
 
 class MyBasePermission(permissions.BasePermission):
