@@ -27,13 +27,20 @@ class User(AbstractUser):
         'Имя', max_length=150, blank=True)
     last_name = models.CharField(
         'Фамилия', max_length=150, blank=True)
+    confirmation_code = models.CharField(
+        'Код подтверждения', max_length=36, blank=True
+    )
 
     class Meta:
         ordering = ['username']
 
     def __str__(self):
-        return self.username
+        return self.__str__()
 
     @property
     def is_admin(self):
-        return bool(self.role == ROLE_ADMIN or self.is_staff)
+        return self.role == ROLE_ADMIN or self.is_staff
+
+    @property
+    def is_moderator(self):
+        return self.role == ROLE_MODERATOR
