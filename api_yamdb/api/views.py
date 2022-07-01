@@ -4,8 +4,8 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import (User, Review, Title, Comment, Genre, Category,
-                            USERNAME_ME)
+from reviews.models import Review, Title, Comment, Genre, Category
+from users.models import User, USERNAME_ME
 
 from .utils import Email
 from .filters import TitleFilter

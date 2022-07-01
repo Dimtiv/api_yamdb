@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from reviews.models import ROLE_MODERATOR, ROLE_ADMIN, USERNAME_ME
+from users.models import ROLE_MODERATOR, ROLE_ADMIN, USERNAME_ME
 
 
 class MyBasePermission(permissions.BasePermission):

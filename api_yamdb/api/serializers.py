@@ -4,9 +4,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import (
-    Genre, Title, Category, User, Review, Comment, USERNAME_ME
-)
+from reviews.models import Genre, Title, Category, Review, Comment
+from users.models import User, USERNAME_ME
 
 
 class TokenSerializer(serializers.ModelSerializer):
