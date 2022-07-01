@@ -35,6 +35,10 @@ class SignUpSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        # Данная проверка нужна в том случае, когда пытаются создать
+        # нового юзера, например, с email, который уже занят, или с
+        # username, который уже занят. Проверка на уникальность
+        # сработает только на уровне БД и код вывалится в ошибку.
         if User.objects.filter(
                 email=attrs['email']).first() != User.objects.filter(
                 username=attrs['username']).first():

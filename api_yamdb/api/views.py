@@ -68,6 +68,7 @@ class UserViewSet(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
+    # Коллегиально приняли решение не громоздить всё в один пермишен
     permission_classes = [IsReadOnly | IsOwner | IsModerator | IsAdmin]
 
     def get_queryset(self):
@@ -80,6 +81,7 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
+    # Коллегиально приняли решение не громоздить всё в один пермишен
     permission_classes = [IsReadOnly | IsOwner | IsModerator | IsAdmin]
 
     def get_queryset(self):
