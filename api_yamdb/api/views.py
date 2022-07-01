@@ -6,10 +6,9 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from reviews.models import Review, Title, Comment, Genre, Category
 from users.models import User, USERNAME_ME
-
-from .utils import Email
 from .filters import TitleFilter
 from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly, IsMe
 from .serializers import (
@@ -17,6 +16,7 @@ from .serializers import (
     GenreSerializer, CategorySerializer, TitleSerializer, ReviewSerializer,
     TitlePostSerializer, MeUserSerializer
 )
+from .utils import Email
 
 
 class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
@@ -71,6 +71,7 @@ class UserViewSet(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
+    # Коллегиально приняли решение не громоздить всё в один пермишен
     permission_classes = [IsReadOnly | IsOwner | IsModerator | IsAdmin]
 
     def get_queryset(self):
@@ -83,6 +84,7 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
+    # Коллегиально приняли решение не громоздить всё в один пермишен
     permission_classes = [IsReadOnly | IsOwner | IsModerator | IsAdmin]
 
     def get_queryset(self):
