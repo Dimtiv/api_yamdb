@@ -1,13 +1,14 @@
+import uuid
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, filters, status, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import (User, Review, Title, Comment, Genre, Category,
-                            USERNAME_ME)
 
-from .utils import Email
+from reviews.models import Review, Title, Comment, Genre, Category
+from users.models import User, USERNAME_ME
 from .filters import TitleFilter
 from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly, IsMe
 from .serializers import (
@@ -15,7 +16,7 @@ from .serializers import (
     GenreSerializer, CategorySerializer, TitleSerializer, ReviewSerializer,
     TitlePostSerializer, MeUserSerializer
 )
-from .tokens import account_activation_token
+from .utils import Email
 
 
 class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
@@ -25,9 +26,11 @@ class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, created = User.objects.get_or_create(**serializer.validated_data)
-        confirmation_code = account_activation_token.make_token(user)
+        generated_code = str(uuid.uuid4())
+        user.confirmation_code = generated_code
+        user.save()
         Email.send_email(user.email,
-                         f'Ваш код подтверждения: {confirmation_code}')
+                         f'Ваш код подтверждения: {generated_code}')
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -39,7 +42,7 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
         serializer.is_valid(raise_exception=True)
         confirmation_code = serializer.validated_data['confirmation_code']
         user = get_object_or_404(User, username=self.request.data['username'])
-        if not account_activation_token.check_token(user, confirmation_code):
+        if user.confirmation_code != confirmation_code:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         token = RefreshToken.for_user(user).access_token
         return Response(data={'token': str(token)})
@@ -68,6 +71,7 @@ class UserViewSet(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
+    # Коллегиально приняли решение не громоздить всё в один пермишен
     permission_classes = [IsReadOnly | IsOwner | IsModerator | IsAdmin]
 
     def get_queryset(self):
@@ -80,6 +84,7 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
+    # Коллегиально приняли решение не громоздить всё в один пермишен
     permission_classes = [IsReadOnly | IsOwner | IsModerator | IsAdmin]
 
     def get_queryset(self):
