@@ -34,10 +34,11 @@ class SignUpSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        # Данная проверка нужна в том случае, когда пытаются создать
-        # нового юзера, например, с email, который уже занят, или с
-        # username, который уже занят. Проверка на уникальность
-        # сработает только на уровне БД и код вывалится в ошибку.
+        # Если в валидаторе не проверять, то будет необработанное исключение
+        # django.db.utils.IntegrityError:
+        # UNIQUE constraint failed: users_user.email
+        # И программа упадет.
+        # Тесты же в свою очередь ожидают код ответа 400
         if User.objects.filter(
                 email=attrs['email']).first() != User.objects.filter(
                 username=attrs['username']).first():
@@ -121,8 +122,7 @@ class TitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer()
 
     class Meta:
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+        fields = '__all__'
         read_only_fields = ('rating', 'genre', 'category')
         model = Title
 
