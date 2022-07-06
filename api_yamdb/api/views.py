@@ -41,6 +41,12 @@ class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         confirmation_code = serializer.validated_data['confirmation_code']
+        # При повторной отправке данных, уже существующего пользователя
+        # (username и email), метод user = serializer.save() пытается создать
+        # нового пользователя, что приводит к ошибке на уровне БД.
+        # Можно переопределить метод create у сериализатора,
+        # но это гораздо трудозатратнее, чем просто использовать
+        # конструкцию User.objects.get_or_create(**serializer.validated_data)
         user = get_object_or_404(User, username=self.request.data['username'])
         if user.confirmation_code != confirmation_code:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -71,7 +77,6 @@ class UserViewSet(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    # Коллегиально приняли решение не громоздить всё в один пермишен
     permission_classes = [IsReadOnly | IsOwner | IsModerator | IsAdmin]
 
     def get_queryset(self):
@@ -84,7 +89,6 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
-    # Коллегиально приняли решение не громоздить всё в один пермишен
     permission_classes = [IsReadOnly | IsOwner | IsModerator | IsAdmin]
 
     def get_queryset(self):
