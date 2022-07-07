@@ -52,7 +52,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if User.objects.filter(
                 email=attrs['email']).first() != User.objects.filter(
-            username=attrs['username']).first():
+                username=attrs['username']).first():
             raise ValidationError(
                 {'detail': 'Данный email или username уже используются!'})
         return attrs
