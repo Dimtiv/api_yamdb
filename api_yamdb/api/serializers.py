@@ -1,20 +1,36 @@
+import uuid
 from django.db.models import Avg
 from django.db.models.functions import Round
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.validators import UniqueTogetherValidator
-
+from rest_framework_simplejwt.tokens import RefreshToken
+from api.utils import Email
 from reviews.models import Genre, Title, Category, Review, Comment
 from users.models import User, USERNAME_ME
 
 
-class TokenSerializer(serializers.ModelSerializer):
+class SignInSerializer(serializers.ModelSerializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 
     class Meta:
         fields = ('username', 'confirmation_code')
         model = User
+
+    def save(self, **kwargs):
+        return str(
+            RefreshToken.for_user(self.validated_data['user']).access_token
+        )
+
+    def validate(self, attrs):
+        user = get_object_or_404(User, username=attrs['username'])
+        if user.confirmation_code != attrs['confirmation_code']:
+            raise ValidationError(
+                {'detail': 'Неверный код!'})
+        attrs['user'] = user
+        return attrs
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -34,17 +50,21 @@ class SignUpSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        # Если в валидаторе не проверять, то будет необработанное исключение
-        # django.db.utils.IntegrityError:
-        # UNIQUE constraint failed: users_user.email
-        # И программа упадет.
-        # Тесты же в свою очередь ожидают код ответа 400
         if User.objects.filter(
                 email=attrs['email']).first() != User.objects.filter(
                 username=attrs['username']).first():
             raise ValidationError(
                 {'detail': 'Данный email или username уже используются!'})
         return attrs
+
+    def save(self, **kwargs):
+        user, created = User.objects.get_or_create(**self.validated_data)
+        generated_code = str(uuid.uuid4())
+        user.confirmation_code = generated_code
+        user.save()
+        Email.send_email(user.email,
+                         f'Ваш код подтверждения: {generated_code}')
+        return user
 
 
 class UserSerializer(serializers.ModelSerializer):
