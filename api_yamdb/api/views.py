@@ -1,22 +1,17 @@
-import uuid
-
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, filters, status, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from rest_framework_simplejwt.tokens import RefreshToken
-
 from reviews.models import Review, Title, Comment, Genre, Category
 from users.models import User, USERNAME_ME
 from .filters import TitleFilter
 from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly, IsMe
 from .serializers import (
-    SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
+    SignUpSerializer, SignInSerializer, UserSerializer, CommentSerializer,
     GenreSerializer, CategorySerializer, TitleSerializer, ReviewSerializer,
     TitlePostSerializer, MeUserSerializer
 )
-from .utils import Email
 
 
 class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
@@ -25,33 +20,19 @@ class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user, created = User.objects.get_or_create(**serializer.validated_data)
-        generated_code = str(uuid.uuid4())
-        user.confirmation_code = generated_code
-        user.save()
-        Email.send_email(user.email,
-                         f'Ваш код подтверждения: {generated_code}')
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
-    serializer_class = TokenSerializer
+class SignInViewSet(mixins.CreateModelMixin, GenericViewSet):
+    serializer_class = SignInSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        confirmation_code = serializer.validated_data['confirmation_code']
-        # При повторной отправке данных, уже существующего пользователя
-        # (username и email), метод user = serializer.save() пытается создать
-        # нового пользователя, что приводит к ошибке на уровне БД.
-        # Можно переопределить метод create у сериализатора,
-        # но это гораздо трудозатратнее, чем просто использовать
-        # конструкцию User.objects.get_or_create(**serializer.validated_data)
-        user = get_object_or_404(User, username=self.request.data['username'])
-        if user.confirmation_code != confirmation_code:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        token = RefreshToken.for_user(user).access_token
-        return Response(data={'token': str(token)})
+        token = serializer.save()
+
+        return Response(data={'token': token})
 
 
 class UserViewSet(ModelViewSet):
