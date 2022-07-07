@@ -12,7 +12,7 @@ from users.models import User, USERNAME_ME
 from .filters import TitleFilter
 from .permissions import IsModerator, IsAdmin, IsOwner, IsReadOnly, IsMe
 from .serializers import (
-    SignUpSerializer, TokenSerializer, UserSerializer, CommentSerializer,
+    SignUpSerializer, SignInSerializer, UserSerializer, CommentSerializer,
     GenreSerializer, CategorySerializer, TitleSerializer, ReviewSerializer,
     TitlePostSerializer, MeUserSerializer
 )
@@ -35,7 +35,7 @@ class SignUpViewSet(mixins.CreateModelMixin, GenericViewSet):
 
 
 class TokenViewSet(mixins.CreateModelMixin, GenericViewSet):
-    serializer_class = TokenSerializer
+    serializer_class = SignInSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

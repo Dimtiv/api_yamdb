@@ -8,7 +8,7 @@ from reviews.models import Genre, Title, Category, Review, Comment
 from users.models import User, USERNAME_ME
 
 
-class TokenSerializer(serializers.ModelSerializer):
+class SignInSerializer(serializers.ModelSerializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 
