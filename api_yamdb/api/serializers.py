@@ -1,4 +1,5 @@
 import uuid
+
 from django.db.models import Avg
 from django.db.models.functions import Round
 from rest_framework import serializers
@@ -6,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from api.utils import Email
 from reviews.models import Genre, Title, Category, Review, Comment
 from users.models import User, USERNAME_ME
